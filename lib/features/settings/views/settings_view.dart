@@ -52,108 +52,24 @@ class _SettingsBody extends StatelessWidget {
               label: 'Última sincronização',
               value: _formatLastSync(vm.lastSyncAt),
             ),
-            if (vm.hasPendingSync && vm.pendingSyncMessage != null) ...[
-              const SizedBox(height: 12),
-              InfoCard(
-                title: 'Sincronização pendente',
-                message: vm.pendingSyncMessage!,
-                icon: Icons.pause_circle_outline,
-              ),
-            ],
             const SizedBox(height: 24),
             PrimaryButton(
-              label: vm.isSyncing
-                  ? 'Sincronizando...'
-                  : vm.hasPendingSync
-                      ? 'Continuar sincronização'
-                      : 'Sincronizar alunos',
-              icon: vm.hasPendingSync
-                  ? Icons.play_arrow_outlined
-                  : Icons.cloud_download_outlined,
-              onPressed: vm.isSyncing ? null : vm.syncNow,
+              label: 'Sincronizar alunos',
+              icon: Icons.cloud_download_outlined,
+              onPressed: null,
             ),
-            if (vm.hasPendingSync && !vm.isSyncing) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: vm.restartSync,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: const Text(
-                    'Reiniciar do zero',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            if (vm.isSyncing) ...[
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: vm.syncProgress != null
-                    ? LinearProgressIndicator(
-                        value: vm.syncProgress,
-                        minHeight: 8,
-                        backgroundColor: AppColors.border,
-                        color: AppColors.primary,
-                      )
-                    : const LinearProgressIndicator(
-                        minHeight: 8,
-                      ),
-              ),
-              if (vm.syncProgress != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  '${(vm.syncProgress! * 100).toStringAsFixed(1)}%',
-                  style: AppTextStyles.badge.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (vm.progressMessage != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  vm.progressMessage!,
-                  style: AppTextStyles.cardBody.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: 4),
-              Text(
-                'Você pode sair desta tela — o progresso continua na notificação.',
-                style: AppTextStyles.badge.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            if (vm.successMessage != null) ...[
-              const SizedBox(height: 16),
-              InfoCard(
-                title: 'Sincronização',
-                message: vm.successMessage!,
-                icon: Icons.check_circle_outline,
-              ),
-            ],
+            const SizedBox(height: 12),
+            const InfoCard(
+              title: 'Sync ZIP/JSON',
+              message:
+                  'A sincronização por arquivo compactado será implementada '
+                  'nesta branch. Aguardando definição da rota da API.',
+              icon: Icons.info_outline,
+            ),
             if (vm.errorMessage != null) ...[
               const SizedBox(height: 16),
               InfoCard(
-                title: 'Erro na sincronização',
+                title: 'Erro',
                 message: vm.errorMessage!,
                 icon: Icons.error_outline,
               ),
@@ -162,10 +78,9 @@ class _SettingsBody extends StatelessWidget {
             const InfoCard(
               title: 'Modo offline',
               message:
-                  'Toque em "Sincronizar alunos" para baixar os dados. '
-                  'Se a sincronização for interrompida, use "Continuar sincronização" '
-                  'para retomar de onde parou. '
-                  'Com conexão, o app consulta a API e atualiza o banco local.',
+                  'Após a sincronização, você poderá consultar alunos mesmo '
+                  'sem internet. Com conexão, o app consulta a API e atualiza '
+                  'o banco local.',
             ),
           ],
         ),
