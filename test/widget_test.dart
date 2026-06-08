@@ -12,7 +12,10 @@ void main() {
       MultiProvider(
         providers: [
           Provider(create: (_) => AuthRepository()),
-          Provider(create: (_) => AlunoSyncService()),
+          ProxyProvider<AuthRepository, AlunoSyncService>(
+            update: (_, auth, previous) =>
+                previous ?? AlunoSyncService(authRepository: auth),
+          ),
           ProxyProvider<AuthRepository, StudentsRepository>(
             update: (_, auth, previous) =>
                 previous ?? StudentsRepository(authRepository: auth),

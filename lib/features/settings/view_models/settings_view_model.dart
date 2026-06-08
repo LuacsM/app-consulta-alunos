@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:consulta_alunos/features/sync/services/aluno_sync_service.dart';
+import 'package:consulta_alunos/features/sync/models/sync_progress.dart';
+import 'package:consulta_alunos/features/sync/services/sync_session_controller.dart';
 
 class SettingsViewModel extends ChangeNotifier {
-  SettingsViewModel(this._syncService);
+  SettingsViewModel(this._syncSession) {
+    _syncSession.addListener(_onSessionChanged);
+  }
 
-  final AlunoSyncService _syncService;
+  final SyncSessionController _syncSession;
 
-  String? _lastSyncAt;
-  int _studentCount = 0;
-  String? _errorMessage;
+  String? get lastSyncAt => _syncSession.lastSyncAt;
+  int get studentCount => _syncSession.studentCount;
+  bool get isSyncing => _syncSession.isSyncing;
+  String? get errorMessage => _syncSession.errorMessage;
+  String? get successMessage => _syncSession.successMessage;
+  String? get progressMessage => _syncSession.progressMessage;
+  double? get syncProgress => _syncSession.syncProgress;
+  SyncPhase? get syncPhase => _syncSession.syncPhase;
+  bool get hasPendingSync => _syncSession.hasPendingSync;
+  String? get pendingSyncMessage => _syncSession.pendingSyncMessage;
 
-  String? get lastSyncAt => _lastSyncAt;
-  int get studentCount => _studentCount;
-  String? get errorMessage => _errorMessage;
+  Future<void> load() => _syncSession.load();
 
-  Future<void> load() async {
-    try {
-      _lastSyncAt = await _syncService.getLastSyncAt();
-      _studentCount = await _syncService.getLocalStudentCount();
-      _errorMessage = null;
-    } catch (e) {
-      _errorMessage = 'Não foi possível ler os dados locais: $e';
-    }
-    notifyListeners();
+  Future<void> syncNow() => _syncSession.syncNow();
+
+  Future<void> restartSync() => _syncSession.restartSync();
+
+  void _onSessionChanged() => notifyListeners();
+
+  @override
+  void dispose() {
+    _syncSession.removeListener(_onSessionChanged);
+    super.dispose();
   }
 }
