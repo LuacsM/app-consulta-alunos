@@ -11,12 +11,20 @@ import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
 import 'package:consulta_alunos/shared/widgets/primary_button.dart';
 
 class LoginView extends StatelessWidget {
-  const LoginView({super.key});
+  const LoginView({
+    super.key,
+    this.showOfflineOption = false,
+  });
+
+  final bool showOfflineOption;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => LoginViewModel(context.read<AuthRepository>()),
+      create: (context) => LoginViewModel(
+        context.read<AuthRepository>(),
+        showOfflineOption: showOfflineOption,
+      ),
       child: const _LoginBody(),
     );
   }
@@ -30,6 +38,18 @@ class _LoginBody extends StatelessWidget {
     final success = await vm.login();
     if (!context.mounted || !success) return;
 
+    _openApp(context);
+  }
+
+  Future<void> _handleOfflineSession(BuildContext context) async {
+    final vm = context.read<LoginViewModel>();
+    final success = await vm.startOfflineSession();
+    if (!context.mounted || !success) return;
+
+    _openApp(context);
+  }
+
+  void _openApp(BuildContext context) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const MainShellView()),
     );
@@ -124,20 +144,48 @@ class _LoginBody extends StatelessWidget {
                       onPressed:
                           vm.canSubmit ? () => _handleLogin(context) : null,
                     ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: DismissKeyboard.wrap(vm.onForgotPassword),
-                      child: const Text(
-                        'Esqueci minha senha',
-                        style: AppTextStyles.link,
+                    if (vm.showOfflineOption) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: vm.isOfflineLoading
+                              ? null
+                              : () => _handleOfflineSession(context),
+                          icon: vm.isOfflineLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                )
+                              : const Icon(Icons.offline_bolt_outlined),
+                          label: Text(
+                            vm.isOfflineLoading
+                                ? 'Autenticando...'
+                                : 'Iniciar sessão offline',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'Acesso restrito a funcionários autorizados da secretaria escolar.',
-                      style: AppTextStyles.footer,
-                      textAlign: TextAlign.center,
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Use a senha, impressão digital ou reconhecimento '
+                        'facial deste dispositivo para acessar os dados já '
+                        'sincronizados.',
+                        style: AppTextStyles.footer,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               ),
