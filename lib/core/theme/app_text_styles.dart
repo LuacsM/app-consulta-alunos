@@ -45,7 +45,7 @@ abstract final class AppTextStyles {
   static const TextStyle link = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
+    color: AppColors.primaryBlue,
   );
 
   static const TextStyle footer = TextStyle(

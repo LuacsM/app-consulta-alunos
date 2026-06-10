@@ -4,6 +4,7 @@ import 'package:consulta_alunos/features/search/views/search_view.dart';
 import 'package:consulta_alunos/features/settings/views/settings_view.dart';
 import 'package:consulta_alunos/shared/widgets/app_tab_bar.dart';
 import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
+import 'package:consulta_alunos/shared/widgets/wavy_top_navbar.dart';
 
 class MainShellView extends StatefulWidget {
   const MainShellView({super.key});
@@ -33,18 +34,19 @@ class _MainShellViewState extends State<MainShellView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: const Text('Consulta Alunos'),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
-      ),
-      body: IndexedStack(
-        index: _currentTab,
-        children: const [
-          SearchView(),
-          SettingsView(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const WavyTopNavbar(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentTab,
+              children: const [
+                SearchView(),
+                SettingsView(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: AppTabBar(

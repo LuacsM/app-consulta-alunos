@@ -50,7 +50,6 @@ class _SearchBody extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           SegmentedToggle<SearchType>(
-            label: 'Selecione o tipo de busca',
             selected: vm.searchType,
             onChanged: vm.setSearchType,
             options: SearchType.values
@@ -58,24 +57,43 @@ class _SearchBody extends StatelessWidget {
                   (type) => SegmentedOption(
                     value: type,
                     label: type.label,
-                    icon: type.icon,
                   ),
                 )
                 .toList(),
           ),
           const SizedBox(height: 20),
-          InputField(
-            label: vm.searchType.inputLabel,
-            controller: vm.queryController,
-            hint: vm.searchType.placeholder,
-            leadingIcon: vm.searchType.icon,
-            keyboardType: vm.searchType.keyboardType,
-            textInputAction: TextInputAction.search,
-            inputFormatters: vm.searchType == SearchType.cpf
-                ? const [CpfInputFormatter()]
-                : null,
-            onChanged: (_) => vm.onQueryChanged(),
-            onSubmitted: (_) => vm.search(),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            switchInCurve: Curves.easeInOutCubic,
+            switchOutCurve: Curves.easeInOutCubic,
+            transitionBuilder: (child, animation) {
+              final offsetAnimation = Tween<Offset>(
+                begin: const Offset(0, 0.06),
+                end: Offset.zero,
+              ).animate(animation);
+
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                ),
+              );
+            },
+            child: InputField(
+              key: ValueKey(vm.searchType),
+              label: vm.searchType.inputLabel,
+              controller: vm.queryController,
+              hint: vm.searchType.placeholder,
+              leadingIcon: vm.searchType.icon,
+              keyboardType: vm.searchType.keyboardType,
+              textInputAction: TextInputAction.search,
+              inputFormatters: vm.searchType == SearchType.cpf
+                  ? const [CpfInputFormatter()]
+                  : null,
+              onChanged: (_) => vm.onQueryChanged(),
+              onSubmitted: (_) => vm.search(),
+            ),
           ),
           const SizedBox(height: 16),
           PrimaryButton(
@@ -116,11 +134,17 @@ class _SearchBody extends StatelessWidget {
         return _buildResults(vm);
 
       case SearchContentState.empty:
-        return EmptyStateCard(
-          title: 'Nenhum Aluno Selecionado',
-          description: vm.searchType == SearchType.cpf
-              ? 'Digite o CPF do aluno ou do responsável para localizar o cadastro.'
-              : 'Utilize o campo acima para buscar pelo nome completo do aluno.',
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          switchInCurve: Curves.easeInOutCubic,
+          switchOutCurve: Curves.easeInOutCubic,
+          child: EmptyStateCard(
+            key: ValueKey(vm.searchType),
+            title: 'Nenhum Aluno Selecionado',
+            description: vm.searchType == SearchType.cpf
+                ? 'Digite o CPF do aluno ou do responsável para localizar o cadastro.'
+                : 'Utilize o campo acima para buscar pelo nome completo do aluno.',
+          ),
         );
     }
   }
