@@ -5,10 +5,10 @@ import 'package:consulta_alunos/core/theme/app_text_styles.dart';
 import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
 import 'package:consulta_alunos/features/auth/view_models/login_view_model.dart';
 import 'package:consulta_alunos/features/shell/main_shell_view.dart';
-import 'package:consulta_alunos/shared/widgets/app_logo.dart';
 import 'package:consulta_alunos/shared/widgets/input_field.dart';
 import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
 import 'package:consulta_alunos/shared/widgets/primary_button.dart';
+import 'package:consulta_alunos/shared/widgets/wavy_top_navbar.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({
@@ -58,36 +58,33 @@ class _LoginBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LoginViewModel>();
-
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
       body: DismissKeyboard(
-        child: SafeArea(
-          child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomInset),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 32,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const WavyTopNavbar(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, 24, 24, 16 + bottomInset),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppLogo(),
-                    const SizedBox(height: 20),
-                    Text('Consulta Alunos', style: AppTextStyles.appTitle),
-                    const SizedBox(height: 8),
                     Text(
                       'Bem Vindo! 👋',
-                      style: AppTextStyles.subtitle.copyWith(fontSize: 18),
-                      textAlign: TextAlign.center,
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
                     InputField(
                       label: 'E-mail institucional',
                       controller: vm.emailController,
@@ -125,13 +122,13 @@ class _LoginBody extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
+                          color: AppColors.errorBackground,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           vm.errorMessage!,
                           style: AppTextStyles.cardBody.copyWith(
-                            color: const Color(0xFFB91C1C),
+                            color: AppColors.error,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -189,9 +186,8 @@ class _LoginBody extends StatelessWidget {
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ],
         ),
       ),
     );

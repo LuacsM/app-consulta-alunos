@@ -67,6 +67,8 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/logo_consulta_alunos.png
+    - assets/images/logo_seduc.png
     - assets/images/sync_processing.gif
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:consulta_alunos/core/theme/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.size = 72});
+  const AppLogo({super.key, this.height = 48});
 
-  final double size;
+  static const assetPath = 'assets/images/logo_consulta_alunos.png';
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.verified_user_outlined,
-        color: Colors.white,
-        size: size * 0.45,
-      ),
+    return Image.asset(
+      assetPath,
+      height: height,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+    );
+  }
+}
+
+class SeducLogo extends StatelessWidget {
+  const SeducLogo({super.key, this.height = 52});
+
+  static const assetPath = 'assets/images/logo_seduc.png';
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      assetPath,
+      height: height,
+      fit: BoxFit.contain,
+      alignment: Alignment.centerRight,
+      filterQuality: FilterQuality.medium,
     );
   }
 }

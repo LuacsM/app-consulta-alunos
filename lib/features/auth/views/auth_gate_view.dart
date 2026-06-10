@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:consulta_alunos/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:consulta_alunos/core/theme/app_colors.dart';
 import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
@@ -28,9 +30,12 @@ class _AuthGateViewState extends State<AuthGateView> {
       future: _sessionCheck,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+          return const AnnotatedRegion<SystemUiOverlayStyle>(
+            value: AppTheme.lightScreenOverlay,
+            child: Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             ),
           );
         }
