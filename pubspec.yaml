@@ -43,6 +43,7 @@ dependencies:
   share_plus: ^10.1.4
   flutter_foreground_task: ^9.2.2
   local_auth: ^2.3.0
+  flutter_svg: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +55,24 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/logo.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/images/logo.png
+  remove_alpha_ios: true
+  background_color_ios: "#FFFFFF"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  android: true
+  ios: true
+  android_12:
+    color: "#FFFFFF"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -67,7 +86,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo_consulta_alunos.png
+    - assets/images/logo_curumim_splash.png
+    - assets/images/footer.svg
+    - assets/images/logo_curumim.png
     - assets/images/logo_seduc.png
     - assets/images/sync_processing.gif
 

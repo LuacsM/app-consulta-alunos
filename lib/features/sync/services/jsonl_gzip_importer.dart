@@ -7,15 +7,21 @@ import 'package:consulta_alunos/features/sync/data/students_local_dao.dart';
 class JsonlMetadata {
   const JsonlMetadata({
     required this.generatedAt,
+    required this.maxSyncUpdatedAt,
     required this.total,
   });
 
   final String generatedAt;
+  final String maxSyncUpdatedAt;
   final int total;
+
+  String get clientSyncVersion =>
+      maxSyncUpdatedAt.isNotEmpty ? maxSyncUpdatedAt : generatedAt;
 
   factory JsonlMetadata.fromJson(Map<String, dynamic> json) {
     return JsonlMetadata(
       generatedAt: json['generated_at'] as String? ?? '',
+      maxSyncUpdatedAt: json['max_sync_updated_at'] as String? ?? '',
       total: json['total'] as int? ?? 0,
     );
   }

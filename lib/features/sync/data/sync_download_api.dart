@@ -24,8 +24,7 @@ class SyncDownloadApi {
   Future<void> downloadArchive({
     required String token,
     required String savePath,
-    String? updatedAfter,
-    String? codEscola,
+    String? clientMaxSyncUpdatedAt,
     DownloadProgressCallback? onProgress,
   }) async {
     try {
@@ -33,8 +32,9 @@ class SyncDownloadApi {
         '/alunos/sync-download',
         savePath,
         queryParameters: {
-          'updated_after': ?updatedAfter,
-          'cod_escola': ?codEscola,
+          if (clientMaxSyncUpdatedAt != null &&
+              clientMaxSyncUpdatedAt.isNotEmpty)
+            'client_max_sync_updated_at': clientMaxSyncUpdatedAt,
         },
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
@@ -48,7 +48,7 @@ class SyncDownloadApi {
         final body = ApiResponseParser.decodeObjectFrom(response.data);
         throw ApiException(
           ApiResponseParser.extractDetail(body) ??
-              'Erro ao baixar arquivo de sincronização.',
+              'Não foi possível baixar os dados.',
           statusCode: response.statusCode,
         );
       }
@@ -63,7 +63,7 @@ class SyncDownloadApi {
       final body = ApiResponseParser.decodeObjectFrom(response.data);
       return ApiException(
         ApiResponseParser.extractDetail(body) ??
-            'Erro ao baixar arquivo de sincronização.',
+            'Não foi possível baixar os dados.',
         statusCode: response.statusCode,
       );
     }
@@ -73,10 +73,10 @@ class SyncDownloadApi {
         DioExceptionType.connectionTimeout ||
         DioExceptionType.receiveTimeout ||
         DioExceptionType.sendTimeout =>
-          'Tempo esgotado ao baixar o arquivo de sincronização.',
+          'A atualização demorou demais. Tente novamente.',
         DioExceptionType.connectionError =>
-          'Sem conexão com o servidor. Verifique sua internet.',
-        _ => 'Falha ao baixar o arquivo de sincronização.',
+          'Sem conexão com a internet. Verifique sua rede.',
+        _ => 'Não foi possível baixar os dados.',
       },
     );
   }

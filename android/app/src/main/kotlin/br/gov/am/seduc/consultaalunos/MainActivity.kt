@@ -1,4 +1,4 @@
-package com.example.consulta_alunos
+package br.gov.am.seduc.consultaalunos
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

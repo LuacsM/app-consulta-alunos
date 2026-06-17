@@ -54,7 +54,7 @@ class LoginViewModel extends ChangeNotifier {
       return false;
     } catch (error) {
       _errorMessage =
-          'Não foi possível conectar ao servidor. Verifique sua internet.';
+          'Não foi possível entrar agora. Verifique sua internet.';
       if (NetworkUtils.isConnectionError(error) &&
           await _authRepository.hasStoredSession()) {
         _showOfflineOption = true;

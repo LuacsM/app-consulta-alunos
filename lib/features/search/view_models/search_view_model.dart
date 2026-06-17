@@ -85,7 +85,7 @@ class SearchViewModel extends ChangeNotifier {
     } catch (_) {
       _contentState = SearchContentState.error;
       _errorMessage =
-          'Não foi possível conectar ao servidor. Verifique se a API está ativa.';
+          'Não foi possível consultar agora. Verifique sua internet.';
     } finally {
       _isSearching = false;
       notifyListeners();

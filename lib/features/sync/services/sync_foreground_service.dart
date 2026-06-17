@@ -35,7 +35,7 @@ class SyncForegroundService {
         channelId: _channelId,
         channelName: 'Sincronização de alunos',
         channelDescription:
-            'Mostra o progresso da sincronização offline dos alunos.',
+            'Acompanhe o andamento da atualização dos dados dos alunos.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
         onlyAlertOnce: true,
@@ -68,8 +68,8 @@ class SyncForegroundService {
     if (!_isSupported) return;
 
     final initialText = resume
-        ? 'Etapa 3/3 — Retomando importação...'
-        : 'Etapa 1/3 — Preparando arquivo...';
+        ? 'Etapa 3 de 3 — Continuando...'
+        : 'Etapa 1 de 3 — Preparando...';
 
     if (await FlutterForegroundTask.isRunningService) {
       await FlutterForegroundTask.updateService(
@@ -120,16 +120,15 @@ class SyncForegroundService {
 
   static String _notificationText(SyncProgress progress) {
     return switch (progress.phase) {
-      SyncPhase.preparing => 'Etapa 1/3 — Servidor preparando arquivo...',
+      SyncPhase.preparing => 'Etapa 1 de 3 — Preparando os dados...',
       SyncPhase.downloading => progress.downloadProgress != null
-          ? 'Etapa 2/3 — Baixando '
+          ? 'Etapa 2 de 3 — Baixando '
               '${(progress.downloadProgress! * 100).toStringAsFixed(0)}%'
-          : 'Etapa 2/3 — Baixando arquivo compactado...',
+          : 'Etapa 2 de 3 — Baixando dados...',
       SyncPhase.importing => progress.total != null
-          ? 'Etapa 3/3 — Importando ${progress.itemsProcessed} de '
-              '${progress.total} '
+          ? 'Etapa 3 de 3 — Salvando dados '
               '(${_percent(progress.importProgressFraction)})'
-          : 'Etapa 3/3 — Importando ${progress.itemsProcessed} alunos...',
+          : 'Etapa 3 de 3 — Salvando dados...',
     };
   }
 

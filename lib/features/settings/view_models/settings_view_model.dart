@@ -10,7 +10,6 @@ class SettingsViewModel extends ChangeNotifier {
   final SyncSessionController _syncSession;
 
   String? get lastSyncAt => _syncSession.lastSyncAt;
-  int get studentCount => _syncSession.studentCount;
   bool get isSyncing => _syncSession.isSyncing;
   String? get errorMessage => _syncSession.errorMessage;
   String? get successMessage => _syncSession.successMessage;

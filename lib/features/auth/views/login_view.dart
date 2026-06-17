@@ -6,6 +6,7 @@ import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
 import 'package:consulta_alunos/features/auth/view_models/login_view_model.dart';
 import 'package:consulta_alunos/features/shell/main_shell_view.dart';
 import 'package:consulta_alunos/shared/widgets/input_field.dart';
+import 'package:consulta_alunos/shared/widgets/detin_footer.dart';
 import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
 import 'package:consulta_alunos/shared/widgets/primary_button.dart';
 import 'package:consulta_alunos/shared/widgets/wavy_top_navbar.dart';
@@ -177,12 +178,16 @@ class _LoginBody extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Use a senha, impressão digital ou reconhecimento '
-                        'facial deste dispositivo para acessar os dados já '
-                        'sincronizados.',
+                        'facial deste aparelho para acessar os dados já '
+                        'baixados.',
                         style: AppTextStyles.footer,
                         textAlign: TextAlign.center,
                       ),
                     ],
+                    const SizedBox(height: 56),
+                    const Center(
+                      child: DetinFooter(bottomPadding: 0),
+                    ),
                   ],
                 ),
               ),

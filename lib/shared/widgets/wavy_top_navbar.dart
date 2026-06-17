@@ -7,8 +7,8 @@ import 'package:consulta_alunos/shared/widgets/app_logo.dart';
 class WavyTopNavbar extends StatelessWidget {
   const WavyTopNavbar({
     super.key,
-    this.logoHeight = 56,
-    this.seducLogoHeight = 52,
+    this.logoHeight = 64,
+    this.seducLogoHeight = 32,
     this.height = 140,
   });
 
@@ -70,15 +70,13 @@ class WavyTopNavbar extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 10, 24, 44),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AppLogo(height: logoHeight),
-                        const Spacer(),
-                        Flexible(
-                          child: Transform.translate(
-                            offset: const Offset(0, -4),
-                            child: SeducLogo(height: seducLogoHeight),
-                          ),
+                        Transform.translate(
+                          offset: const Offset(0, -4),
+                          child: SeducLogo(height: seducLogoHeight),
                         ),
                       ],
                     ),

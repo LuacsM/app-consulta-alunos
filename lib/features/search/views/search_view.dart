@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:consulta_alunos/core/theme/app_colors.dart';
-import 'package:consulta_alunos/core/theme/app_text_styles.dart';
 import 'package:consulta_alunos/features/search/data/students_repository.dart';
 import 'package:consulta_alunos/features/search/models/search_content_state.dart';
 import 'package:consulta_alunos/features/search/models/search_type.dart';
@@ -153,16 +151,6 @@ class _SearchBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          vm.students.length == 1
-              ? '1 aluno encontrado'
-              : '${vm.students.length} alunos encontrados',
-          style: AppTextStyles.sectionLabel.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
         ...vm.students.map(
           (student) => Padding(
             padding: const EdgeInsets.only(bottom: 12),

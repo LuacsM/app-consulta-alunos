@@ -13,8 +13,8 @@ class SyncStepsIndicator extends StatelessWidget {
 
   static const _steps = [
     (SyncPhase.preparing, '1', 'Preparar'),
-    (SyncPhase.downloading, '2', 'Download'),
-    (SyncPhase.importing, '3', 'Importar'),
+    (SyncPhase.downloading, '2', 'Baixar'),
+    (SyncPhase.importing, '3', 'Salvar'),
   ];
 
   @override

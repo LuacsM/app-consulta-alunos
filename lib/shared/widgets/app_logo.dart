@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.height = 48});
 
-  static const assetPath = 'assets/images/logo_consulta_alunos.png';
+  static const assetPath = 'assets/images/logo_curumim.png';
 
   final double height;
 
@@ -31,7 +31,6 @@ class SeducLogo extends StatelessWidget {
       assetPath,
       height: height,
       fit: BoxFit.contain,
-      alignment: Alignment.centerRight,
       filterQuality: FilterQuality.medium,
     );
   }

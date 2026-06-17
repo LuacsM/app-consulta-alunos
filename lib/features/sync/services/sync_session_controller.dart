@@ -20,7 +20,6 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   final AlunoSyncService _syncService;
 
   String? _lastSyncAt;
-  int _studentCount = 0;
   bool _isSyncing = false;
   String? _errorMessage;
   String? _successMessage;
@@ -30,7 +29,6 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   SyncDumpCheckpoint? _pendingCheckpoint;
 
   String? get lastSyncAt => _lastSyncAt;
-  int get studentCount => _studentCount;
   bool get isSyncing => _isSyncing;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
@@ -44,13 +42,7 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
     final checkpoint = _pendingCheckpoint;
     if (checkpoint == null || !checkpoint.isValid) return null;
 
-    if (checkpoint.totalExpected != null) {
-      return 'Importação incompleta: ${checkpoint.linesProcessed} de '
-          '${checkpoint.totalExpected} alunos.';
-    }
-
-    return 'Importação incompleta: ${checkpoint.linesProcessed} alunos '
-        'processados.';
+    return 'Sincronização incompleta. Toque em "Continuar sincronização".';
   }
 
   @override
@@ -63,12 +55,11 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> load() async {
     try {
       _lastSyncAt = await _syncService.getLastSyncAt();
-      _studentCount = await _syncService.getLocalStudentCount();
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _errorMessage = null;
       await _restoreRunningSession();
     } catch (e) {
-      _errorMessage = 'Não foi possível ler os dados locais: $e';
+      _errorMessage = 'Não foi possível carregar as informações salvas.';
     }
     notifyListeners();
   }
@@ -94,16 +85,13 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
     if (_pendingCheckpoint != null && _pendingCheckpoint!.isValid) {
       _syncPhase = SyncPhase.importing;
       _syncProgress = _pendingCheckpoint!.progressFraction;
-      _progressMessage = _pendingCheckpoint!.totalExpected != null
-          ? 'Importando ${_pendingCheckpoint!.linesProcessed} de '
-              '${_pendingCheckpoint!.totalExpected} alunos...'
-          : 'Importando ${_pendingCheckpoint!.linesProcessed} alunos...';
+      _progressMessage = 'Salvando dados...';
     } else {
       _syncPhase = SyncPhase.preparing;
       _syncProgress = null;
       _progressMessage = _lastSyncAt == null
-          ? 'Servidor preparando arquivo de sincronização...'
-          : 'Buscando alterações desde a última sincronização...';
+          ? 'Preparando os dados...'
+          : 'Verificando novidades desde a última atualização...';
     }
 
     notifyListeners();
@@ -116,10 +104,10 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
     _errorMessage = null;
     _successMessage = null;
     _progressMessage = resume
-        ? 'Retomando importação...'
+        ? 'Continuando de onde parou...'
         : fullSync || _lastSyncAt == null
-            ? 'Servidor preparando arquivo de sincronização...'
-            : 'Buscando alterações desde a última sincronização...';
+            ? 'Preparando os dados...'
+            : 'Verificando novidades desde a última atualização...';
     _syncProgress = resume ? _pendingCheckpoint?.progressFraction : null;
     _syncPhase = resume ? SyncPhase.importing : SyncPhase.preparing;
     notifyListeners();
@@ -141,16 +129,13 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
 
           _progressMessage = switch (progress.phase) {
             SyncPhase.preparing => fullSync || _lastSyncAt == null
-                ? 'Servidor preparando arquivo de sincronização...'
-                : 'Buscando alterações desde a última sincronização...',
+                ? 'Preparando os dados...'
+                : 'Verificando novidades desde a última atualização...',
             SyncPhase.downloading => progress.downloadProgress != null
-                ? 'Baixando arquivo '
+                ? 'Baixando dados '
                     '(${(progress.downloadProgress! * 100).toStringAsFixed(0)}%)...'
-                : 'Baixando arquivo compactado...',
-            SyncPhase.importing => progress.total != null
-                ? 'Importando ${progress.itemsProcessed} de '
-                    '${progress.total} alunos...'
-                : 'Importando ${progress.itemsProcessed} alunos...',
+                : 'Baixando dados dos alunos...',
+            SyncPhase.importing => 'Salvando dados...',
           };
 
           notifyListeners();
@@ -159,24 +144,20 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       _lastSyncAt = await _syncService.getLastSyncAt();
-      _studentCount = await _syncService.getLocalStudentCount();
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _progressMessage = null;
       _syncProgress = result.completedFully ? 1.0 : _syncProgress;
 
       if (!result.completedFully && result.totalExpected != null) {
         _successMessage =
-            'Importação pausada em ${result.itemsProcessed} de '
-            '${result.totalExpected} aluno(s). Toque em "Continuar sincronização".';
+            'Sincronização pausada. Toque em "Continuar sincronização".';
       } else if (result.incremental) {
         _successMessage = result.itemsProcessed == 0
-            ? 'Nenhuma alteração encontrada desde a última sincronização.'
-            : 'Atualização concluída: ${result.itemsProcessed} aluno(s) '
-                'atualizados.';
+            ? 'Nenhuma novidade desde a última atualização.'
+            : 'Atualização concluída.';
       } else {
         _successMessage =
-            'Sincronização concluída: ${result.itemsProcessed} aluno(s) '
-            'importados do arquivo JSONL.';
+            'Sincronização concluída. Os dados já estão disponíveis offline.';
       }
 
       await SyncForegroundService.finish(message: _successMessage!);
@@ -193,8 +174,8 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
       _progressMessage = null;
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _errorMessage = hasPendingSync
-          ? 'Não foi possível sincronizar: $e Você pode continuar de onde parou.'
-          : 'Não foi possível sincronizar: $e';
+          ? 'Não foi possível sincronizar. Você pode continuar de onde parou.'
+          : 'Não foi possível sincronizar. Tente novamente.';
       await SyncForegroundService.stop();
     } finally {
       _isSyncing = false;

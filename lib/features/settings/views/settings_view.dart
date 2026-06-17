@@ -40,16 +40,10 @@ class _SettingsBody extends StatelessWidget {
             Text('Ajustes', style: AppTextStyles.screenTitle),
             const SizedBox(height: 6),
             const Text(
-              'Sincronização offline via arquivo JSONL compactado (.jsonl.gz).',
+              'Atualize os dados dos alunos para consultar sem internet.',
               style: AppTextStyles.subtitle,
             ),
             const SizedBox(height: 24),
-            _InfoTile(
-              icon: Icons.storage_outlined,
-              label: 'Alunos no dispositivo',
-              value: '${vm.studentCount}',
-            ),
-            const SizedBox(height: 12),
             _InfoTile(
               icon: Icons.sync_outlined,
               label: 'Última sincronização',
@@ -170,14 +164,10 @@ class _SettingsBody extends StatelessWidget {
             if (!vm.isSyncing) ...[
               const SizedBox(height: 20),
               const InfoCard(
-                title: 'Modo offline',
+                title: 'Consulta sem internet',
                 message:
-                    'O app baixa um arquivo .jsonl.gz com todos os alunos, '
-                    'importa para o SQLite e permite consultas sem internet. '
-                    'Você pode sair do app durante a sincronização — o progresso '
-                    'das 3 etapas aparece na notificação. Ao pressionar voltar, '
-                    'o app é minimizado e a sincronização continua. '
-                    'Se a importação for interrompida, use "Continuar sincronização".',
+                    'Baixe os dados dos alunos para consultar mesmo offline. '
+                    'A atualização pode levar alguns minutos.',
               ),
             ],
           ],
@@ -194,12 +184,10 @@ class _SettingsBody extends StatelessWidget {
   String _phaseHint(SyncPhase phase) {
     return switch (phase) {
       SyncPhase.preparing =>
-        'O servidor está gerando o arquivo. Isso pode levar alguns '
-            'minutos antes do download começar.',
+        'Aguarde enquanto preparamos os dados. Isso pode levar alguns minutos.',
       SyncPhase.downloading =>
-        'Baixando o arquivo compactado (~6 MB) para o dispositivo.',
-      SyncPhase.importing =>
-        'Gravando os alunos no banco local do aplicativo.',
+        'Baixando os dados dos alunos para o seu dispositivo.',
+      SyncPhase.importing => 'Salvando os alunos no aplicativo.',
     };
   }
 }

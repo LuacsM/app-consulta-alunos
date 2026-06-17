@@ -54,7 +54,7 @@ class AlunoSyncService {
       if (!await archive.exists()) {
         await _syncStorage.clearCheckpoint();
         throw ApiException(
-          'Arquivo de sincronização não encontrado. Inicie uma nova sincronização.',
+          'Não foi possível continuar. Inicie uma nova sincronização.',
         );
       }
     } else {
@@ -68,8 +68,10 @@ class AlunoSyncService {
       final archivePath = checkpoint?.archivePath ?? await _archivePath();
 
       if (checkpoint == null) {
-        final updatedAfter = fullSync ? null : await _syncStorage.getLastSyncAt();
-        incremental = updatedAfter != null && updatedAfter.isNotEmpty;
+        final clientMaxSyncUpdatedAt =
+            fullSync ? null : await _syncStorage.getLastSyncAt();
+        incremental =
+            clientMaxSyncUpdatedAt != null && clientMaxSyncUpdatedAt.isNotEmpty;
 
         onProgress?.call(
           const SyncProgress(phase: SyncPhase.preparing),
@@ -79,7 +81,7 @@ class AlunoSyncService {
         await _downloadApi.downloadArchive(
           token: token,
           savePath: archivePath,
-          updatedAfter: incremental ? updatedAfter : null,
+          clientMaxSyncUpdatedAt: incremental ? clientMaxSyncUpdatedAt : null,
           onProgress: (received, total) {
             if (!downloadStarted && (received > 0 || total > 0)) {
               downloadStarted = true;
@@ -136,14 +138,15 @@ class AlunoSyncService {
       );
 
       final finalGeneratedAt = importResult.metadata.generatedAt;
+      final clientSyncVersion = importResult.metadata.clientSyncVersion;
       final totalExpected = importResult.metadata.total;
 
       final completedFully = importResult.itemsProcessed >= totalExpected;
 
       if (completedFully) {
         await _syncStorage.clearCheckpoint();
-        if (finalGeneratedAt.isNotEmpty) {
-          await _syncStorage.saveLastSyncAt(finalGeneratedAt);
+        if (clientSyncVersion.isNotEmpty) {
+          await _syncStorage.saveLastSyncAt(clientSyncVersion);
         }
         try {
           await File(archivePath).delete();
@@ -160,10 +163,12 @@ class AlunoSyncService {
       );
     } on ApiException {
       rethrow;
-    } on FormatException catch (error) {
-      throw ApiException('Arquivo de sincronização inválido: ${error.message}');
+    } on FormatException catch (_) {
+      throw ApiException(
+        'Não foi possível usar os dados baixados. Tente sincronizar novamente.',
+      );
     } catch (error) {
-      throw ApiException('Não foi possível sincronizar: $error');
+      throw ApiException('Não foi possível sincronizar. Tente novamente.');
     }
   }
 

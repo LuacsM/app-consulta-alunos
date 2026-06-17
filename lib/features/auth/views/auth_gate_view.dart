@@ -9,7 +9,9 @@ import 'package:consulta_alunos/features/auth/views/login_view.dart';
 import 'package:consulta_alunos/features/shell/main_shell_view.dart';
 
 class AuthGateView extends StatefulWidget {
-  const AuthGateView({super.key});
+  const AuthGateView({super.key, this.initialSession});
+
+  final SessionCheckResult? initialSession;
 
   @override
   State<AuthGateView> createState() => _AuthGateViewState();
@@ -21,7 +23,9 @@ class _AuthGateViewState extends State<AuthGateView> {
   @override
   void initState() {
     super.initState();
-    _sessionCheck = context.read<AuthRepository>().checkSession();
+    _sessionCheck = widget.initialSession != null
+        ? Future.value(widget.initialSession)
+        : context.read<AuthRepository>().checkSession();
   }
 
   @override
