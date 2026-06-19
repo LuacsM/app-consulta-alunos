@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:consulta_alunos/core/config/app_info.dart';
 import 'package:consulta_alunos/core/theme/app_colors.dart';
 import 'package:consulta_alunos/core/theme/app_text_styles.dart';
 import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
 import 'package:consulta_alunos/features/auth/view_models/login_view_model.dart';
+import 'package:consulta_alunos/features/auth/views/recover_password_view.dart';
 import 'package:consulta_alunos/features/shell/main_shell_view.dart';
 import 'package:consulta_alunos/shared/widgets/input_field.dart';
 import 'package:consulta_alunos/shared/widgets/detin_footer.dart';
@@ -117,6 +119,19 @@ class _LoginBody extends StatelessWidget {
                             DismissKeyboard.wrap(vm.togglePasswordVisibility),
                       ),
                     ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const RecoverPasswordView(),
+                            ),
+                          );
+                        },
+                        child: const Text('Esqueci minha senha'),
+                      ),
+                    ),
                     if (vm.errorMessage != null) ...[
                       const SizedBox(height: 16),
                       Container(
@@ -185,6 +200,16 @@ class _LoginBody extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 56),
+                    Center(
+                      child: Text(
+                        'Versão ${AppInfo.version}',
+                        style: AppTextStyles.footer.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     const Center(
                       child: DetinFooter(bottomPadding: 0),
                     ),

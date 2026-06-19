@@ -6,24 +6,23 @@ import 'package:consulta_alunos/core/theme/app_text_styles.dart';
 class DocumentSearchAnimation extends StatelessWidget {
   const DocumentSearchAnimation({
     super.key,
-    this.height = 120,
     this.message,
   });
 
   static const assetPath = 'assets/images/sync_processing.gif';
 
-  final double height;
   final String? message;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Image.asset(
           assetPath,
-          height: height,
-          fit: BoxFit.contain,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
           gaplessPlayback: true,
           filterQuality: FilterQuality.medium,
         ),

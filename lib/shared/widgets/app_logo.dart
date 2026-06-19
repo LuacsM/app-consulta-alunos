@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.height = 48});
 
-  static const assetPath = 'assets/images/logo_curumim.png';
+  static const assetPath = 'assets/images/logo-curumim.png';
 
   final double height;
 

@@ -20,6 +20,7 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   final AlunoSyncService _syncService;
 
   String? _lastSyncAt;
+  String? _lastGeneratedAt;
   bool _isSyncing = false;
   String? _errorMessage;
   String? _successMessage;
@@ -29,6 +30,7 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   SyncDumpCheckpoint? _pendingCheckpoint;
 
   String? get lastSyncAt => _lastSyncAt;
+  String? get lastGeneratedAt => _lastGeneratedAt;
   bool get isSyncing => _isSyncing;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
@@ -55,6 +57,7 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> load() async {
     try {
       _lastSyncAt = await _syncService.getLastSyncAt();
+      _lastGeneratedAt = await _syncService.getLastGeneratedAt();
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _errorMessage = null;
       await _restoreRunningSession();
@@ -144,6 +147,7 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       _lastSyncAt = await _syncService.getLastSyncAt();
+      _lastGeneratedAt = await _syncService.getLastGeneratedAt();
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _progressMessage = null;
       _syncProgress = result.completedFully ? 1.0 : _syncProgress;
@@ -153,11 +157,14 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
             'Sincronização pausada. Toque em "Continuar sincronização".';
       } else if (result.incremental) {
         _successMessage = result.itemsProcessed == 0
-            ? 'Nenhuma novidade desde a última atualização.'
-            : 'Atualização concluída.';
+            ? (result.upToDateMessage ??
+                'Nenhuma novidade desde a última atualização.')
+            : 'Atualização concluída. ${result.itemsProcessed} registro(s) alterado(s).';
       } else {
-        _successMessage =
-            'Sincronização concluída. Os dados já estão disponíveis offline.';
+        final changed = result.changedCount ?? result.itemsProcessed;
+        _successMessage = changed > 0
+            ? 'Sincronização concluída. $changed registro(s) disponíveis offline.'
+            : 'Sincronização concluída. Os dados já estão disponíveis offline.';
       }
 
       await SyncForegroundService.finish(message: _successMessage!);
@@ -175,7 +182,9 @@ class SyncSessionController extends ChangeNotifier with WidgetsBindingObserver {
       _pendingCheckpoint = await _syncService.getPendingCheckpoint();
       _errorMessage = hasPendingSync
           ? 'Não foi possível sincronizar. Você pode continuar de onde parou.'
-          : 'Não foi possível sincronizar. Tente novamente.';
+          : e is ApiException
+              ? e.message
+              : 'Não foi possível sincronizar: $e';
       await SyncForegroundService.stop();
     } finally {
       _isSyncing = false;

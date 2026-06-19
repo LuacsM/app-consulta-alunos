@@ -4,6 +4,8 @@ class SyncResult {
     required this.completedFully,
     this.totalExpected,
     this.generatedAt,
+    this.changedCount,
+    this.upToDateMessage,
     this.resumedFromCheckpoint = false,
     this.incremental = false,
   });
@@ -12,6 +14,8 @@ class SyncResult {
   final bool completedFully;
   final int? totalExpected;
   final String? generatedAt;
+  final int? changedCount;
+  final String? upToDateMessage;
   final bool resumedFromCheckpoint;
   final bool incremental;
 }

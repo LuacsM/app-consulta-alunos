@@ -73,9 +73,7 @@ class SearchViewModel extends ChangeNotifier {
       if (_searchType == SearchType.name) {
         _students = await _repository.searchByName(query);
       } else {
-        final student = await _repository.searchByCpf(query);
-        _students = [student];
-        _expandedCodAluno = student.codAluno;
+        _students = await _repository.searchByCpf(query);
       }
 
       _contentState = SearchContentState.results;

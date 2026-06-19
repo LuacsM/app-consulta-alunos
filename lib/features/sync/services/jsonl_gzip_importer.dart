@@ -9,11 +9,15 @@ class JsonlMetadata {
     required this.generatedAt,
     required this.maxSyncUpdatedAt,
     required this.total,
+    this.changedCount,
+    this.generationMode,
   });
 
   final String generatedAt;
   final String maxSyncUpdatedAt;
   final int total;
+  final int? changedCount;
+  final String? generationMode;
 
   String get clientSyncVersion =>
       maxSyncUpdatedAt.isNotEmpty ? maxSyncUpdatedAt : generatedAt;
@@ -23,6 +27,8 @@ class JsonlMetadata {
       generatedAt: json['generated_at'] as String? ?? '',
       maxSyncUpdatedAt: json['max_sync_updated_at'] as String? ?? '',
       total: json['total'] as int? ?? 0,
+      changedCount: json['changed_count'] as int?,
+      generationMode: json['generation_mode'] as String?,
     );
   }
 }

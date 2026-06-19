@@ -15,8 +15,8 @@ enum SearchType {
       };
 
   String get inputLabel => switch (this) {
-        SearchType.name => 'Nome do aluno',
-        SearchType.cpf => 'CPF do aluno ou do responsável',
+        SearchType.name => 'Nome do aluno ou responsável',
+        SearchType.cpf => 'CPF do aluno ou responsável',
       };
 
   String get placeholder => switch (this) {

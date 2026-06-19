@@ -28,6 +28,16 @@ abstract final class ApiResponseParser {
     return [];
   }
 
+  /// Aceita resposta em lista ou objeto único de aluno.
+  static List<dynamic> decodeStudentListFrom(dynamic data) {
+    final asList = decodeListFrom(data);
+    if (asList.isNotEmpty) return asList;
+
+    final object = decodeObjectFrom(data);
+    if (object.containsKey('cod_aluno')) return [object];
+    return [];
+  }
+
   static String? extractDetail(Map<String, dynamic> body) {
     final detail = body['detail'];
     if (detail is String) return detail;

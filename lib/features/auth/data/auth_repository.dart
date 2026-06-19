@@ -1,6 +1,7 @@
 import 'package:consulta_alunos/core/auth/device_auth_service.dart';
 import 'package:consulta_alunos/core/network/api_exception.dart';
 import 'package:consulta_alunos/core/network/network_utils.dart';
+import 'package:consulta_alunos/core/utils/formatters.dart';
 import 'package:consulta_alunos/features/auth/data/auth_api.dart';
 import 'package:consulta_alunos/features/auth/data/auth_storage.dart';
 import 'package:consulta_alunos/features/auth/models/session_check_result.dart';
@@ -81,5 +82,44 @@ class AuthRepository {
 
   Future<UserInfo?> getCurrentUser() => _storage.getUser();
 
-  Future<void> logout() => _storage.clear();
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = await _storage.getToken();
+    final user = await _storage.getUser();
+    if (token == null || token.isEmpty || user == null) {
+      throw ApiException('Sessão expirada. Faça login novamente.');
+    }
+
+    return _api.changePassword(
+      token: token,
+      userId: user.id,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  Future<String> recoverPassword({
+    required String cpf,
+    required String phone,
+    required String newPassword,
+  }) {
+    return _api.recoverPassword(
+      cpf: Formatters.digitsOnly(cpf),
+      phone: Formatters.digitsOnly(phone),
+      newPassword: newPassword,
+    );
+  }
+
+  Future<void> logout() async {
+    final token = await _storage.getToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await _api.logout(token);
+      } catch (_) {
+        // Segue para o login mesmo se o servidor não responder.
+      }
+    }
+  }
 }

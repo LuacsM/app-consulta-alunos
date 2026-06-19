@@ -46,21 +46,19 @@ class _SplashViewState extends State<SplashView> {
       value: AppTheme.lightScreenOverlay,
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Image(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image(
                 image: AssetImage('assets/images/logo_curumim_splash.png'),
                 width: 220,
                 fit: BoxFit.contain,
               ),
-            ),
-            const Align(
-              alignment: Alignment.bottomCenter,
-              child: DetinFooter(bottomPadding: 52),
-            ),
-          ],
+              const SizedBox(height: 32),
+              const DetinFooter(bottomPadding: 0),
+            ],
+          ),
         ),
       ),
     );

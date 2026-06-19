@@ -38,7 +38,7 @@ class StudentsRepository {
     }
   }
 
-  Future<Student> searchByCpf(String cpf) async {
+  Future<List<Student>> searchByCpf(String cpf) async {
     final digits = Formatters.digitsOnly(cpf);
     if (digits.isEmpty) {
       throw ApiException('Informe um CPF válido.');
@@ -46,18 +46,14 @@ class StudentsRepository {
 
     try {
       final token = await _requireToken();
-      final student = await _api.searchByCpf(cpf: digits, token: token);
-      await _localDao.upsertStudents([student]);
-      return student;
+      final results = await _api.searchByCpf(cpf: digits, token: token);
+      await _localDao.upsertStudents(results);
+      return results;
     } on ApiException {
       rethrow;
     } catch (error) {
       if (NetworkUtils.isConnectionError(error)) {
-        final results = await _localDao.searchByCpf(digits);
-        if (results.isEmpty) {
-          throw ApiException('Aluno não encontrado no modo offline.');
-        }
-        return results.first;
+        return _localDao.searchByCpf(digits);
       }
       rethrow;
     }

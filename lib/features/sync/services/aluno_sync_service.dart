@@ -78,7 +78,7 @@ class AlunoSyncService {
         );
 
         var downloadStarted = false;
-        await _downloadApi.downloadArchive(
+        final downloadResult = await _downloadApi.downloadArchive(
           token: token,
           savePath: archivePath,
           clientMaxSyncUpdatedAt: incremental ? clientMaxSyncUpdatedAt : null,
@@ -97,6 +97,27 @@ class AlunoSyncService {
             );
           },
         );
+
+        if (!downloadResult.requiresImport) {
+          final syncedVersion =
+              downloadResult.maxSyncUpdatedAt ?? clientMaxSyncUpdatedAt;
+          if (syncedVersion != null && syncedVersion.isNotEmpty) {
+            await _syncStorage.saveSyncVersions(
+              maxSyncUpdatedAt: syncedVersion,
+              generatedAt: downloadResult.generatedAt ??
+                  DateTime.now().toUtc().toIso8601String(),
+            );
+          }
+
+          return SyncResult(
+            itemsProcessed: 0,
+            completedFully: true,
+            totalExpected: downloadResult.total ?? 0,
+            generatedAt: downloadResult.generatedAt,
+            incremental: incremental,
+            upToDateMessage: downloadResult.message,
+          );
+        }
 
         await _syncStorage.saveCheckpoint(
           SyncDumpCheckpoint(
@@ -146,7 +167,10 @@ class AlunoSyncService {
       if (completedFully) {
         await _syncStorage.clearCheckpoint();
         if (clientSyncVersion.isNotEmpty) {
-          await _syncStorage.saveLastSyncAt(clientSyncVersion);
+          await _syncStorage.saveSyncVersions(
+            maxSyncUpdatedAt: clientSyncVersion,
+            generatedAt: importResult.metadata.generatedAt,
+          );
         }
         try {
           await File(archivePath).delete();
@@ -158,17 +182,22 @@ class AlunoSyncService {
         completedFully: completedFully,
         totalExpected: totalExpected,
         generatedAt: finalGeneratedAt,
+        changedCount: importResult.metadata.changedCount,
         resumedFromCheckpoint: checkpoint != null,
         incremental: incremental,
       );
     } on ApiException {
       rethrow;
-    } on FormatException catch (_) {
+    } on FormatException catch (error) {
       throw ApiException(
-        'Não foi possível usar os dados baixados. Tente sincronizar novamente.',
+        'Não foi possível usar os dados baixados: ${error.message}',
       );
     } catch (error) {
-      throw ApiException('Não foi possível sincronizar. Tente novamente.');
+      throw ApiException(
+        error is StateError || error is TypeError
+            ? 'Não foi possível sincronizar. Tente sincronizar novamente.'
+            : 'Não foi possível sincronizar: $error',
+      );
     }
   }
 
@@ -186,6 +215,8 @@ class AlunoSyncService {
   }
 
   Future<String?> getLastSyncAt() => _syncStorage.getLastSyncAt();
+
+  Future<String?> getLastGeneratedAt() => _syncStorage.getLastGeneratedAt();
 
   Future<SyncDumpCheckpoint?> getPendingCheckpoint() =>
       _syncStorage.getCheckpoint();
