@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:consulta_alunos/core/security/screen_capture_protection.dart';
 import 'package:consulta_alunos/core/theme/app_colors.dart';
 import 'package:consulta_alunos/features/search/views/search_view.dart';
 import 'package:consulta_alunos/features/settings/views/settings_view.dart';
@@ -28,6 +29,18 @@ class _MainShellViewState extends State<MainShellView> {
       activeIcon: Icons.settings,
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    ScreenCaptureProtection.enable();
+  }
+
+  @override
+  void dispose() {
+    ScreenCaptureProtection.disable();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
