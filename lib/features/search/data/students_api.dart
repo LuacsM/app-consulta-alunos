@@ -29,7 +29,7 @@ class StudentsApi {
     throw _errorFromResponse(response);
   }
 
-  Future<Student> searchByCpf({
+  Future<List<Student>> searchByCpf({
     required String cpf,
     required String token,
   }) async {
@@ -40,9 +40,10 @@ class StudentsApi {
     );
 
     if (response.statusCode == 200) {
-      return Student.fromJson(
-        ApiResponseParser.decodeObjectFrom(response.data),
-      );
+      return ApiResponseParser
+          .decodeStudentListFrom(response.data)
+          .map((item) => Student.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
 
     throw _errorFromResponse(response);

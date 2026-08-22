@@ -1,17 +1,24 @@
+import 'package:consulta_alunos/core/auth/device_auth_service.dart';
 import 'package:consulta_alunos/core/network/api_exception.dart';
+import 'package:consulta_alunos/core/network/network_utils.dart';
+import 'package:consulta_alunos/core/utils/formatters.dart';
 import 'package:consulta_alunos/features/auth/data/auth_api.dart';
 import 'package:consulta_alunos/features/auth/data/auth_storage.dart';
+import 'package:consulta_alunos/features/auth/models/session_check_result.dart';
 import 'package:consulta_alunos/features/auth/models/user_info.dart';
 
 class AuthRepository {
   AuthRepository({
     AuthApi? api,
     AuthStorage? storage,
+    DeviceAuthService? deviceAuth,
   })  : _api = api ?? AuthApi(),
-        _storage = storage ?? AuthStorage();
+        _storage = storage ?? AuthStorage(),
+        _deviceAuth = deviceAuth ?? DeviceAuthService();
 
   final AuthApi _api;
   final AuthStorage _storage;
+  final DeviceAuthService _deviceAuth;
 
   Future<UserInfo> login({
     required String email,
@@ -25,24 +32,94 @@ class AuthRepository {
     return response.infoUsuario;
   }
 
-  Future<bool> hasValidSession() async {
+  /// Valida o token online. Sem internet + sessão salva → opção offline.
+  Future<SessionCheckResult> checkSession() async {
     final token = await _storage.getToken();
-    if (token == null || token.isEmpty) return false;
+    if (token == null || token.isEmpty) {
+      return SessionCheckResult.unauthenticated();
+    }
 
     try {
-      return await _api.verifyToken(token);
+      final isValid = await _api.verifyToken(token);
+      return isValid
+          ? SessionCheckResult.authenticated()
+          : SessionCheckResult.unauthenticated();
     } on ApiException {
-      await _storage.clear();
-      return false;
-    } catch (_) {
-      // API indisponível: mantém sessão local com token salvo
-      return true;
+      return SessionCheckResult.unauthenticated();
+    } catch (error) {
+      if (NetworkUtils.isConnectionError(error) && await hasStoredSession()) {
+        return SessionCheckResult.offlineAvailable();
+      }
+      return SessionCheckResult.unauthenticated();
     }
+  }
+
+  /// Indica se já houve login bem-sucedido anteriormente neste dispositivo.
+  Future<bool> hasStoredSession() async {
+    final token = await _storage.getToken();
+    final user = await _storage.getUser();
+    return token != null &&
+        token.isNotEmpty &&
+        user != null;
+  }
+
+  Future<bool> startOfflineSession() async {
+    if (!await hasStoredSession()) {
+      throw ApiException(
+        'Não há sessão anterior neste dispositivo para entrar offline.',
+      );
+    }
+
+    final authenticated = await _deviceAuth.authenticateForOfflineSession();
+    if (!authenticated) {
+      throw ApiException('Autenticação do dispositivo cancelada.');
+    }
+
+    return true;
   }
 
   Future<String?> getToken() => _storage.getToken();
 
   Future<UserInfo?> getCurrentUser() => _storage.getUser();
 
-  Future<void> logout() => _storage.clear();
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = await _storage.getToken();
+    final user = await _storage.getUser();
+    if (token == null || token.isEmpty || user == null) {
+      throw ApiException('Sessão expirada. Faça login novamente.');
+    }
+
+    return _api.changePassword(
+      token: token,
+      userId: user.id,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  Future<String> recoverPassword({
+    required String cpf,
+    required String phone,
+    required String newPassword,
+  }) {
+    return _api.recoverPassword(
+      cpf: Formatters.digitsOnly(cpf),
+      phone: Formatters.digitsOnly(phone),
+      newPassword: newPassword,
+    );
+  }
+
+  Future<void> logout() async {
+    final token = await _storage.getToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await _api.logout(token);
+      } catch (_) {
+        // Segue para o login mesmo se o servidor não responder.
+      }
+    }
+  }
 }

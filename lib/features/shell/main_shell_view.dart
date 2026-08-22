@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:consulta_alunos/core/security/screen_capture_protection.dart';
 import 'package:consulta_alunos/core/theme/app_colors.dart';
 import 'package:consulta_alunos/features/search/views/search_view.dart';
 import 'package:consulta_alunos/features/settings/views/settings_view.dart';
 import 'package:consulta_alunos/shared/widgets/app_tab_bar.dart';
 import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
+import 'package:consulta_alunos/shared/widgets/wavy_top_navbar.dart';
 
 class MainShellView extends StatefulWidget {
   const MainShellView({super.key});
@@ -29,22 +31,35 @@ class _MainShellViewState extends State<MainShellView> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    ScreenCaptureProtection.enable();
+  }
+
+  @override
+  void dispose() {
+    ScreenCaptureProtection.disable();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: const Text('Consulta Alunos'),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
-      ),
-      body: IndexedStack(
-        index: _currentTab,
-        children: const [
-          SearchView(),
-          SettingsView(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const WavyTopNavbar(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentTab,
+              children: const [
+                SearchView(),
+                SettingsView(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: AppTabBar(

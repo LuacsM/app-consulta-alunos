@@ -15,10 +15,6 @@ class Student {
     this.secretaria,
     this.telefone2,
     this.codEscola,
-    this.ensino,
-    this.fase,
-    this.turma,
-    this.turno,
     this.syncUpdatedAt,
     this.syncDeletedAt,
   });
@@ -36,10 +32,6 @@ class Student {
   final String? secretaria;
   final String? telefone2;
   final String? codEscola;
-  final String? ensino;
-  final String? fase;
-  final String? turma;
-  final String? turno;
   final String? syncUpdatedAt;
   final String? syncDeletedAt;
 
@@ -81,10 +73,6 @@ class Student {
       telefone: json['telefone'] as String? ?? '',
       telefone2: json['telefone2'] as String?,
       codEscola: json['cod_escola'] as String?,
-      ensino: json['ensino'] as String?,
-      fase: json['fase'] as String?,
-      turma: json['turma'] as String?,
-      turno: json['turno'] as String?,
       syncUpdatedAt: json['sync_updated_at'] as String?,
       syncDeletedAt: json['sync_deleted_at'] as String?,
     );
@@ -107,10 +95,6 @@ class Student {
       'endereco_aluno': enderecoAluno,
       'cod_escola': codEscola,
       'escola': escola,
-      'ensino': ensino,
-      'fase': fase,
-      'turma': turma,
-      'turno': turno,
       'sync_updated_at': syncUpdatedAt,
       'sync_deleted_at': syncDeletedAt,
     };

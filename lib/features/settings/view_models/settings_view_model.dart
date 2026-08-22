@@ -1,323 +1,169 @@
 import 'package:flutter/material.dart';
-
 import 'package:consulta_alunos/core/network/api_exception.dart';
-
-import 'package:consulta_alunos/features/sync/models/sync_checkpoint.dart';
-
-import 'package:consulta_alunos/features/sync/services/aluno_sync_service.dart';
-
-import 'package:consulta_alunos/features/sync/services/sync_foreground_service.dart';
-
-
+import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
+import 'package:consulta_alunos/features/auth/models/user_info.dart';
+import 'package:consulta_alunos/features/sync/models/sync_progress.dart';
+import 'package:consulta_alunos/features/sync/services/sync_session_controller.dart';
 
 class SettingsViewModel extends ChangeNotifier {
-
-  SettingsViewModel(this._syncService);
-
-
-
-  final AlunoSyncService _syncService;
-
-
-
-  String? _lastSyncAt;
-
-  int _studentCount = 0;
-
-  bool _isSyncing = false;
-
-  String? _errorMessage;
-
-  String? _successMessage;
-
-  String? _progressMessage;
-
-  double? _syncProgress;
-
-  int _syncItemsProcessed = 0;
-
-  int? _syncTotal;
-
-  SyncCheckpoint? _pendingCheckpoint;
-
-
-
-  String? get lastSyncAt => _lastSyncAt;
-
-  int get studentCount => _studentCount;
-
-  bool get isSyncing => _isSyncing;
-
-  String? get errorMessage => _errorMessage;
-
-  String? get successMessage => _successMessage;
-
-  String? get progressMessage => _progressMessage;
-
-  double? get syncProgress => _syncProgress;
-
-  int get syncItemsProcessed => _syncItemsProcessed;
-
-  int? get syncTotal => _syncTotal;
-
-  bool get hasPendingSync =>
-
-      _pendingCheckpoint != null && _pendingCheckpoint!.isValid;
-
-
-
-  String? get pendingSyncMessage {
-
-    final checkpoint = _pendingCheckpoint;
-
-    if (checkpoint == null || !checkpoint.isValid) return null;
-
-
-
-    if (checkpoint.totalExpected != null) {
-
-      return 'Sincronização incompleta: ${checkpoint.itemsProcessed} de '
-
-          '${checkpoint.totalExpected} alunos (${checkpoint.pagesProcessed} lote(s)).';
-
-    }
-
-
-
-    return 'Sincronização incompleta: ${checkpoint.itemsProcessed} alunos '
-
-        'em ${checkpoint.pagesProcessed} lote(s).';
-
+  SettingsViewModel(this._syncSession, this._authRepository) {
+    _syncSession.addListener(_onSessionChanged);
   }
 
+  final SyncSessionController _syncSession;
+  final AuthRepository _authRepository;
 
+  final currentPasswordController = TextEditingController();
+  final newPasswordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
+  UserInfo? _currentUser;
+  bool _isPasswordFormVisible = false;
+  bool _isCurrentPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  bool _isChangingPassword = false;
+  bool _isLoggingOut = false;
+  String? _accountErrorMessage;
+  String? _accountSuccessMessage;
+
+  String? get lastSyncAt => _syncSession.lastSyncAt;
+  String? get lastGeneratedAt => _syncSession.lastGeneratedAt;
+  bool get isSyncing => _syncSession.isSyncing;
+  String? get errorMessage => _syncSession.errorMessage;
+  String? get successMessage => _syncSession.successMessage;
+  String? get progressMessage => _syncSession.progressMessage;
+  double? get syncProgress => _syncSession.syncProgress;
+  SyncPhase? get syncPhase => _syncSession.syncPhase;
+  bool get hasPendingSync => _syncSession.hasPendingSync;
+  String? get pendingSyncMessage => _syncSession.pendingSyncMessage;
+  UserInfo? get currentUser => _currentUser;
+  bool get isPasswordFormVisible => _isPasswordFormVisible;
+  bool get isCurrentPasswordVisible => _isCurrentPasswordVisible;
+  bool get isNewPasswordVisible => _isNewPasswordVisible;
+  bool get isConfirmPasswordVisible => _isConfirmPasswordVisible;
+  bool get isChangingPassword => _isChangingPassword;
+  bool get isLoggingOut => _isLoggingOut;
+  String? get accountErrorMessage => _accountErrorMessage;
+  String? get accountSuccessMessage => _accountSuccessMessage;
+
+  bool get canChangePassword =>
+      currentPasswordController.text.isNotEmpty &&
+      newPasswordController.text.isNotEmpty &&
+      confirmPasswordController.text.isNotEmpty;
 
   Future<void> load() async {
+    _currentUser = await _authRepository.getCurrentUser();
+    notifyListeners();
+    await _syncSession.load();
+  }
 
-    try {
+  Future<void> syncNow() => _syncSession.syncNow();
 
-      _lastSyncAt = await _syncService.getLastSyncAt();
+  Future<void> restartSync() => _syncSession.restartSync();
 
-      _studentCount = await _syncService.getLocalStudentCount();
-
-      _pendingCheckpoint = await _syncService.getPendingCheckpoint();
-
-    } catch (e) {
-
-      _errorMessage = 'Não foi possível ler os dados locais: $e';
-
+  void togglePasswordForm() {
+    _isPasswordFormVisible = !_isPasswordFormVisible;
+    if (!_isPasswordFormVisible) {
+      _clearPasswordForm();
     }
-
     notifyListeners();
-
   }
 
-
-
-  Future<void> syncNow() async {
-
-    await _runSync(resume: hasPendingSync);
-
-  }
-
-
-
-  Future<void> resumeSync() async {
-
-    await _runSync(resume: true);
-
-  }
-
-
-
-  Future<void> restartSync() async {
-
-    await _runSync(resume: false);
-
-  }
-
-
-
-  Future<void> _runSync({required bool resume}) async {
-
-    if (_isSyncing) return;
-
-
-
-    _isSyncing = true;
-
-    _errorMessage = null;
-
-    _successMessage = null;
-
-    _progressMessage = resume
-
-        ? 'Retomando sincronização...'
-
-        : 'Iniciando sincronização...';
-
-    _syncProgress = resume ? _pendingCheckpoint?.progressFraction : null;
-
-    _syncItemsProcessed = resume ? _pendingCheckpoint?.itemsProcessed ?? 0 : 0;
-
-    _syncTotal = resume ? _pendingCheckpoint?.totalExpected : null;
-
+  void toggleCurrentPasswordVisibility() {
+    _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
     notifyListeners();
-
-
-
-    try {
-
-      try {
-
-        await SyncForegroundService.requestPermissions();
-
-        await SyncForegroundService.start();
-
-      } catch (_) {
-
-        // A sincronização continua mesmo se a notificação falhar.
-
-      }
-
-
-
-      final result = await _syncService.syncStudents(
-
-        resume: resume,
-
-        onProgress: (progress) {
-
-          _syncItemsProcessed = progress.itemsProcessed;
-
-          _syncTotal = progress.total;
-
-          _syncProgress = progress.progressFraction;
-
-          _progressMessage = progress.total != null
-
-              ? 'Baixando lote ${progress.pagesProcessed} '
-
-                  '(${progress.itemsProcessed} de ${progress.total} alunos)...'
-
-              : 'Baixando lote ${progress.pagesProcessed} '
-
-                  '(${progress.itemsProcessed} alunos)...';
-
-          notifyListeners();
-
-
-
-          SyncForegroundService.updateProgress(
-
-            itemsProcessed: progress.itemsProcessed,
-
-            total: progress.total,
-
-            pagesProcessed: progress.pagesProcessed,
-
-          );
-
-        },
-
-      );
-
-
-
-      _lastSyncAt = await _syncService.getLastSyncAt();
-
-      _studentCount = await _syncService.getLocalStudentCount();
-
-      _pendingCheckpoint = await _syncService.getPendingCheckpoint();
-
-      _progressMessage = null;
-
-      _syncProgress = result.completedFully ? 1.0 : _syncProgress;
-
-
-
-      if (result.itemsProcessed == 0) {
-
-        _successMessage =
-
-            'Sincronização concluída, mas nenhum aluno foi retornado pela API.';
-
-      } else if (!result.completedFully && result.totalExpected != null) {
-
-        _successMessage =
-
-            'Sincronização pausada em ${result.itemsProcessed} de '
-
-            '${result.totalExpected} aluno(s). Toque em "Continuar sincronização".';
-
-      } else if (result.resumedFromCheckpoint) {
-
-        _successMessage =
-
-            'Sincronização concluída: ${result.itemsProcessed} registro(s) '
-
-            'em ${result.pagesProcessed} lote(s). '
-
-            'Nesta sessão: +${result.sessionItemsProcessed} em '
-
-            '${result.sessionPagesProcessed} lote(s).';
-
-      } else {
-
-        _successMessage =
-
-            'Sincronização concluída: ${result.itemsProcessed} registro(s) '
-
-            'em ${result.pagesProcessed} lote(s).';
-
-      }
-
-
-
-      await SyncForegroundService.finish(message: _successMessage!);
-
-    } on ApiException catch (e) {
-
-      _progressMessage = null;
-
-      _pendingCheckpoint = await _syncService.getPendingCheckpoint();
-
-      _errorMessage = hasPendingSync
-
-          ? '${e.message} Você pode continuar de onde parou.'
-
-          : e.message;
-
-      await SyncForegroundService.finish(
-
-        message: 'Erro na sincronização: ${e.message}',
-
-      );
-
-    } catch (e) {
-
-      _progressMessage = null;
-
-      _pendingCheckpoint = await _syncService.getPendingCheckpoint();
-
-      _errorMessage = hasPendingSync
-
-          ? 'Não foi possível sincronizar: $e Você pode continuar de onde parou.'
-
-          : 'Não foi possível sincronizar: $e';
-
-      await SyncForegroundService.stop();
-
-    } finally {
-
-      _isSyncing = false;
-
+  }
+
+  void toggleNewPasswordVisibility() {
+    _isNewPasswordVisible = !_isNewPasswordVisible;
+    notifyListeners();
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+    notifyListeners();
+  }
+
+  void onPasswordFieldChanged() {
+    if (_accountErrorMessage != null || _accountSuccessMessage != null) {
+      _accountErrorMessage = null;
+      _accountSuccessMessage = null;
       notifyListeners();
-
     }
-
   }
 
+  Future<bool> changePassword() async {
+    if (!canChangePassword || _isChangingPassword) return false;
+
+    final newPassword = newPasswordController.text;
+    if (newPassword != confirmPasswordController.text) {
+      _accountErrorMessage = 'A nova senha e a confirmação não coincidem.';
+      notifyListeners();
+      return false;
+    }
+
+    _isChangingPassword = true;
+    _accountErrorMessage = null;
+    _accountSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final message = await _authRepository.changePassword(
+        currentPassword: currentPasswordController.text,
+        newPassword: newPassword,
+      );
+      _clearPasswordForm();
+      _isPasswordFormVisible = false;
+      _accountSuccessMessage = message;
+      return true;
+    } on ApiException catch (e) {
+      _accountErrorMessage = e.message;
+      return false;
+    } catch (_) {
+      _accountErrorMessage =
+          'Não foi possível alterar a senha. Tente novamente.';
+      return false;
+    } finally {
+      _isChangingPassword = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> logout() async {
+    if (_isLoggingOut || _syncSession.isSyncing) return false;
+
+    _isLoggingOut = true;
+    notifyListeners();
+
+    try {
+      await _authRepository.logout();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _isLoggingOut = false;
+      notifyListeners();
+    }
+  }
+
+  void _clearPasswordForm() {
+    currentPasswordController.clear();
+    newPasswordController.clear();
+    confirmPasswordController.clear();
+    _isCurrentPasswordVisible = false;
+    _isNewPasswordVisible = false;
+    _isConfirmPasswordVisible = false;
+  }
+
+  void _onSessionChanged() => notifyListeners();
+
+  @override
+  void dispose() {
+    _syncSession.removeListener(_onSessionChanged);
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
 }
-
-

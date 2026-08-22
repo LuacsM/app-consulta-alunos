@@ -20,6 +20,30 @@ abstract final class Formatters {
     return maskCpf(digits);
   }
 
+  static String maskPhone(String digits) {
+    final limited = digits.length > 11 ? digits.substring(0, 11) : digits;
+    if (limited.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < limited.length; i++) {
+      if (i == 0) buffer.write('(');
+      if (i == 2) buffer.write(') ');
+      if (i == 7) buffer.write('-');
+      buffer.write(limited[i]);
+    }
+    return buffer.toString();
+  }
+
+  static String formatPhone(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 11) return maskPhone(digits);
+    if (digits.length == 10) {
+      return '(${digits.substring(0, 2)}) '
+          '${digits.substring(2, 6)}-${digits.substring(6)}';
+    }
+    return phone;
+  }
+
   static String formatName(String name) {
     if (name.isEmpty) return name;
     return name
@@ -34,24 +58,29 @@ abstract final class Formatters {
         .join(' ');
   }
 
-  static String formatPhone(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 11) {
-      return '(${digits.substring(0, 2)}) '
-          '${digits.substring(2, 7)}-${digits.substring(7)}';
-    }
-    if (digits.length == 10) {
-      return '(${digits.substring(0, 2)}) '
-          '${digits.substring(2, 6)}-${digits.substring(6)}';
-    }
-    return phone;
-  }
-
   static String initials(String name) {
     final parts =
         name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  static String formatIsoDateTime(String? value) {
+    if (value == null || value.isEmpty) return '';
+
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      return value.replaceFirst('T', ' ').split('.').first;
+    }
+
+    final local = parsed.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+
+    return '$day/$month/$year $hour:$minute';
   }
 }

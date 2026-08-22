@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:consulta_alunos/features/sync/models/sync_progress.dart';
 
 const _serviceId = 256;
 const _channelId = 'aluno_sync_channel';
@@ -34,7 +35,7 @@ class SyncForegroundService {
         channelId: _channelId,
         channelName: 'Sincronização de alunos',
         channelDescription:
-            'Mostra o progresso da sincronização offline dos alunos.',
+            'Acompanhe o andamento da atualização dos dados dos alunos.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
         onlyAlertOnce: true,
@@ -56,28 +57,33 @@ class SyncForegroundService {
   static Future<void> requestPermissions() async {
     if (!_isSupported) return;
 
-    final permission = await FlutterForegroundTask.checkNotificationPermission();
+    final permission =
+        await FlutterForegroundTask.checkNotificationPermission();
     if (permission != NotificationPermission.granted) {
       await FlutterForegroundTask.requestNotificationPermission();
     }
   }
 
-  static Future<void> start() async {
+  static Future<void> start({bool resume = false}) async {
     if (!_isSupported) return;
 
+    final initialText = resume
+        ? 'Etapa 3 de 3 — Continuando...'
+        : 'Etapa 1 de 3 — Preparando...';
+
     if (await FlutterForegroundTask.isRunningService) {
-      final result = await FlutterForegroundTask.restartService();
-      if (result is ServiceRequestFailure) {
-        throw Exception(result.error);
-      }
+      await FlutterForegroundTask.updateService(
+        notificationTitle: 'Sincronizando alunos',
+        notificationText: initialText,
+      );
       return;
     }
 
     final result = await FlutterForegroundTask.startService(
       serviceId: _serviceId,
       serviceTypes: [ForegroundServiceTypes.dataSync],
-      notificationTitle: 'Consulta Alunos',
-      notificationText: 'Iniciando sincronização...',
+      notificationTitle: 'Sincronizando alunos',
+      notificationText: initialText,
       callback: syncForegroundStartCallback,
     );
     if (result is ServiceRequestFailure) {
@@ -85,21 +91,13 @@ class SyncForegroundService {
     }
   }
 
-  static Future<void> updateProgress({
-    required int itemsProcessed,
-    int? total,
-    required int pagesProcessed,
-  }) async {
+  static Future<void> updateProgress(SyncProgress progress) async {
     if (!_isSupported) return;
     if (!await FlutterForegroundTask.isRunningService) return;
 
-    final text = total != null
-        ? 'Lote $pagesProcessed — $itemsProcessed de $total alunos'
-        : 'Lote $pagesProcessed — $itemsProcessed alunos';
-
     await FlutterForegroundTask.updateService(
       notificationTitle: 'Sincronizando alunos',
-      notificationText: text,
+      notificationText: _notificationText(progress),
     );
   }
 
@@ -118,5 +116,24 @@ class SyncForegroundService {
     if (!_isSupported) return;
     if (!await FlutterForegroundTask.isRunningService) return;
     await FlutterForegroundTask.stopService();
+  }
+
+  static String _notificationText(SyncProgress progress) {
+    return switch (progress.phase) {
+      SyncPhase.preparing => 'Etapa 1 de 3 — Preparando os dados...',
+      SyncPhase.downloading => progress.downloadProgress != null
+          ? 'Etapa 2 de 3 — Baixando '
+              '${(progress.downloadProgress! * 100).toStringAsFixed(0)}%'
+          : 'Etapa 2 de 3 — Baixando dados...',
+      SyncPhase.importing => progress.total != null
+          ? 'Etapa 3 de 3 — Salvando dados '
+              '(${_percent(progress.importProgressFraction)})'
+          : 'Etapa 3 de 3 — Salvando dados...',
+    };
+  }
+
+  static String _percent(double? fraction) {
+    if (fraction == null) return '...';
+    return '${(fraction * 100).toStringAsFixed(0)}%';
   }
 }

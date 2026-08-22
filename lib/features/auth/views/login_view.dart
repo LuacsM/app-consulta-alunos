@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:consulta_alunos/core/config/app_info.dart';
 import 'package:consulta_alunos/core/theme/app_colors.dart';
 import 'package:consulta_alunos/core/theme/app_text_styles.dart';
 import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
 import 'package:consulta_alunos/features/auth/view_models/login_view_model.dart';
+import 'package:consulta_alunos/features/auth/views/recover_password_view.dart';
 import 'package:consulta_alunos/features/shell/main_shell_view.dart';
-import 'package:consulta_alunos/shared/widgets/app_logo.dart';
 import 'package:consulta_alunos/shared/widgets/input_field.dart';
+import 'package:consulta_alunos/shared/widgets/detin_footer.dart';
 import 'package:consulta_alunos/shared/widgets/dismiss_keyboard.dart';
 import 'package:consulta_alunos/shared/widgets/primary_button.dart';
+import 'package:consulta_alunos/shared/widgets/wavy_top_navbar.dart';
 
 class LoginView extends StatelessWidget {
-  const LoginView({super.key});
+  const LoginView({
+    super.key,
+    this.showOfflineOption = false,
+  });
+
+  final bool showOfflineOption;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => LoginViewModel(context.read<AuthRepository>()),
+      create: (context) => LoginViewModel(
+        context.read<AuthRepository>(),
+        showOfflineOption: showOfflineOption,
+      ),
       child: const _LoginBody(),
     );
   }
@@ -30,6 +41,18 @@ class _LoginBody extends StatelessWidget {
     final success = await vm.login();
     if (!context.mounted || !success) return;
 
+    _openApp(context);
+  }
+
+  Future<void> _handleOfflineSession(BuildContext context) async {
+    final vm = context.read<LoginViewModel>();
+    final success = await vm.startOfflineSession();
+    if (!context.mounted || !success) return;
+
+    _openApp(context);
+  }
+
+  void _openApp(BuildContext context) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const MainShellView()),
     );
@@ -38,36 +61,33 @@ class _LoginBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LoginViewModel>();
-
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
       body: DismissKeyboard(
-        child: SafeArea(
-          child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomInset),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 32,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const WavyTopNavbar(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, 24, 24, 16 + bottomInset),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppLogo(),
-                    const SizedBox(height: 20),
-                    Text('Consulta Alunos', style: AppTextStyles.appTitle),
-                    const SizedBox(height: 8),
                     Text(
                       'Bem Vindo! 👋',
-                      style: AppTextStyles.subtitle.copyWith(fontSize: 18),
-                      textAlign: TextAlign.center,
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
                     InputField(
                       label: 'E-mail institucional',
                       controller: vm.emailController,
@@ -99,19 +119,32 @@ class _LoginBody extends StatelessWidget {
                             DismissKeyboard.wrap(vm.togglePasswordVisibility),
                       ),
                     ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const RecoverPasswordView(),
+                            ),
+                          );
+                        },
+                        child: const Text('Esqueci minha senha'),
+                      ),
+                    ),
                     if (vm.errorMessage != null) ...[
                       const SizedBox(height: 16),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
+                          color: AppColors.errorBackground,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           vm.errorMessage!,
                           style: AppTextStyles.cardBody.copyWith(
-                            color: const Color(0xFFB91C1C),
+                            color: AppColors.error,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -124,26 +157,67 @@ class _LoginBody extends StatelessWidget {
                       onPressed:
                           vm.canSubmit ? () => _handleLogin(context) : null,
                     ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: DismissKeyboard.wrap(vm.onForgotPassword),
-                      child: const Text(
-                        'Esqueci minha senha',
-                        style: AppTextStyles.link,
+                    if (vm.showOfflineOption) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: vm.isOfflineLoading
+                              ? null
+                              : () => _handleOfflineSession(context),
+                          icon: vm.isOfflineLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                )
+                              : const Icon(Icons.offline_bolt_outlined),
+                          label: Text(
+                            vm.isOfflineLoading
+                                ? 'Autenticando...'
+                                : 'Iniciar sessão offline',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Use a senha, impressão digital ou reconhecimento '
+                        'facial deste aparelho para acessar os dados já '
+                        'baixados.',
+                        style: AppTextStyles.footer,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    const SizedBox(height: 56),
+                    Center(
+                      child: Text(
+                        'Versão ${AppInfo.version}',
+                        style: AppTextStyles.footer.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'Acesso restrito a funcionários autorizados da secretaria escolar.',
-                      style: AppTextStyles.footer,
-                      textAlign: TextAlign.center,
+                    const SizedBox(height: 12),
+                    const Center(
+                      child: DetinFooter(bottomPadding: 0),
                     ),
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ],
         ),
       ),
     );

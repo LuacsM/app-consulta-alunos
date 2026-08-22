@@ -6,37 +6,44 @@ class StudentsLocalDao {
   StudentsLocalDao({Future<Database>? database})
       : _databaseFuture = database;
 
+  static const maxSearchResults = 20;
+
   final Future<Database>? _databaseFuture;
 
   Future<Database> get _db => _databaseFuture ?? AppDatabase.instance;
 
-  Future<List<Student>> searchByName(String nome) async {
+  Future<List<Student>> searchByName(String nome) => _search(nome);
+
+  Future<List<Student>> searchByCpf(String cpf) => _search(cpf);
+
+  Future<List<Student>> _search(String query) async {
     final db = await _db;
-    final filtro = '%${nome.toUpperCase()}%';
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
+
+    final nameFilter = '%${trimmed.toUpperCase()}%';
+    final digits = trimmed.replaceAll(RegExp(r'\D'), '');
+
+    final conditions = <String>[
+      'UPPER(nome_aluno) LIKE ?',
+      'UPPER(nome_mae_aluno) LIKE ?',
+      'UPPER(nome_pai_aluno) LIKE ?',
+    ];
+    final whereArgs = <Object>[nameFilter, nameFilter, nameFilter];
+
+    if (digits.isNotEmpty) {
+      final cpfFilter = '%$digits%';
+      conditions.add('cpf_aluno LIKE ?');
+      conditions.add('cpf_responsavel LIKE ?');
+      whereArgs.addAll([cpfFilter, cpfFilter]);
+    }
 
     final rows = await db.query(
       'alunos',
-      where: '''
-        UPPER(nome_aluno) LIKE ?
-        OR UPPER(nome_mae_aluno) LIKE ?
-        OR UPPER(nome_pai_aluno) LIKE ?
-      ''',
-      whereArgs: [filtro, filtro, filtro],
+      where: conditions.join(' OR '),
+      whereArgs: whereArgs,
       orderBy: 'nome_aluno ASC',
-    );
-
-    return rows.map(Student.fromMap).toList();
-  }
-
-  Future<List<Student>> searchByCpf(String cpf) async {
-    final db = await _db;
-    final digits = cpf.replaceAll(RegExp(r'\D'), '');
-
-    final rows = await db.query(
-      'alunos',
-      where: 'cpf_aluno = ? OR cpf_responsavel = ?',
-      whereArgs: [digits, digits],
-      orderBy: 'nome_aluno ASC',
+      limit: maxSearchResults,
     );
 
     return rows.map(Student.fromMap).toList();

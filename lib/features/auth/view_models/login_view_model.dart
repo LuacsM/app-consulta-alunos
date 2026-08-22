@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:consulta_alunos/core/auth/device_auth_service.dart';
 import 'package:consulta_alunos/core/network/api_exception.dart';
+import 'package:consulta_alunos/core/network/network_utils.dart';
 import 'package:consulta_alunos/features/auth/data/auth_repository.dart';
 
 class LoginViewModel extends ChangeNotifier {
-  LoginViewModel(this._authRepository);
+  LoginViewModel(
+    this._authRepository, {
+    bool showOfflineOption = false,
+  }) : _showOfflineOption = showOfflineOption;
 
   final AuthRepository _authRepository;
 
@@ -12,10 +17,14 @@ class LoginViewModel extends ChangeNotifier {
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isOfflineLoading = false;
+  bool _showOfflineOption;
   String? _errorMessage;
 
   bool get isPasswordVisible => _isPasswordVisible;
   bool get isLoading => _isLoading;
+  bool get isOfflineLoading => _isOfflineLoading;
+  bool get showOfflineOption => _showOfflineOption;
   String? get errorMessage => _errorMessage;
 
   bool get canSubmit =>
@@ -43,9 +52,13 @@ class LoginViewModel extends ChangeNotifier {
     } on ApiException catch (e) {
       _errorMessage = e.message;
       return false;
-    } catch (_) {
+    } catch (error) {
       _errorMessage =
-          'Não foi possível conectar ao servidor. Verifique se a API está ativa.';
+          'Não foi possível entrar agora. Verifique sua internet.';
+      if (NetworkUtils.isConnectionError(error) &&
+          await _authRepository.hasStoredSession()) {
+        _showOfflineOption = true;
+      }
       return false;
     } finally {
       _isLoading = false;
@@ -53,15 +66,36 @@ class LoginViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> startOfflineSession() async {
+    if (_isOfflineLoading) return false;
+
+    _isOfflineLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _authRepository.startOfflineSession();
+    } on DeviceAuthException catch (e) {
+      _errorMessage = e.message;
+      return false;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      return false;
+    } catch (_) {
+      _errorMessage =
+          'Não foi possível iniciar a sessão offline. Tente novamente.';
+      return false;
+    } finally {
+      _isOfflineLoading = false;
+      notifyListeners();
+    }
+  }
+
   void onFieldChanged() {
     if (_errorMessage != null) {
       _errorMessage = null;
+      notifyListeners();
     }
-    notifyListeners();
-  }
-
-  void onForgotPassword() {
-    // TODO: navegar para recuperação de senha
   }
 
   @override

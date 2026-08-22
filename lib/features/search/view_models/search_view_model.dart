@@ -73,9 +73,7 @@ class SearchViewModel extends ChangeNotifier {
       if (_searchType == SearchType.name) {
         _students = await _repository.searchByName(query);
       } else {
-        final student = await _repository.searchByCpf(query);
-        _students = [student];
-        _expandedCodAluno = student.codAluno;
+        _students = await _repository.searchByCpf(query);
       }
 
       _contentState = SearchContentState.results;
@@ -85,7 +83,7 @@ class SearchViewModel extends ChangeNotifier {
     } catch (_) {
       _contentState = SearchContentState.error;
       _errorMessage =
-          'Não foi possível conectar ao servidor. Verifique se a API está ativa.';
+          'Não foi possível consultar agora. Verifique sua internet.';
     } finally {
       _isSearching = false;
       notifyListeners();

@@ -47,4 +47,86 @@ class AuthApi {
       statusCode: response.statusCode,
     );
   }
+
+  Future<void> logout(String token) async {
+    final response = await _dio.post<dynamic>(
+      '/usuarios/logout',
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+
+    final body = ApiResponseParser.decodeObjectFrom(response.data);
+    throw ApiException(
+      ApiResponseParser.extractDetail(body) ?? 'Erro ao encerrar sessão.',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<String> changePassword({
+    required String token,
+    required int userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.put<dynamic>(
+      '/usuarios/alterar-senha/$userId',
+      data: {
+        'senha_atual': currentPassword,
+        'senha_nova': newPassword,
+      },
+      options: Options(
+        contentType: Headers.jsonContentType,
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data;
+      if (data is String && data.isNotEmpty) return data;
+      return 'Senha atualizada com sucesso!';
+    }
+
+    final body = ApiResponseParser.decodeObjectFrom(response.data);
+    throw ApiException(
+      ApiResponseParser.extractDetail(body) ??
+          'Não foi possível alterar a senha.',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<String> recoverPassword({
+    required String cpf,
+    required String phone,
+    required String newPassword,
+  }) async {
+    final response = await _dio.put<dynamic>(
+      '/usuarios/recuperar-senha',
+      data: {
+        'cpf': cpf,
+        'telefone': phone,
+        'senha_nova': newPassword,
+      },
+      options: Options(contentType: Headers.jsonContentType),
+    );
+
+    if (response.statusCode == 200) {
+      final body = ApiResponseParser.decodeObjectFrom(response.data);
+      final message = body['mensagem'];
+      if (message is String && message.isNotEmpty) return message;
+      if (response.data is String && (response.data as String).isNotEmpty) {
+        return response.data as String;
+      }
+      return 'Senha redefinida com sucesso!';
+    }
+
+    final body = ApiResponseParser.decodeObjectFrom(response.data);
+    throw ApiException(
+      ApiResponseParser.extractDetail(body) ??
+          'Não foi possível recuperar a senha.',
+      statusCode: response.statusCode,
+    );
+  }
 }
